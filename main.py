@@ -1,3 +1,5 @@
+from math import sqrt
+
 import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame
@@ -15,7 +17,7 @@ def higher_end():
 
 
 def lower_end():
-    return 0
+    return 1
 
 
 def frequency():
@@ -37,7 +39,7 @@ def get_index_of_min_value_by_list(n_list: list) -> int:
     return min_index
 
 
-def get_min_x_value_with_method_of_bisections(lower_value=lower_end(), higher_value=higher_end()):
+def get_min_x_value_with_method_of_bisections(lower_value=lower_end(), higher_value=higher_end(), fidelity=fidelity()):
     x_list = np.linspace(lower_value, higher_value, 4)
     y_list = [our_function(x) for x in x_list]
     lower_index = get_index_of_min_value_by_list(list(y_list))
@@ -45,7 +47,7 @@ def get_min_x_value_with_method_of_bisections(lower_value=lower_end(), higher_va
     if lower_index == 0 or lower_index == 3:
         raise ValueError("Invalid range")
 
-    if x_list[lower_index + 1] - x_list[lower_index - 1] < fidelity():
+    if x_list[lower_index + 1] - x_list[lower_index - 1] < fidelity:
         if y_list[lower_index - 1] < y_list[lower_index + 1]:
             x_needed = x_list[lower_index - 1]
         else:
@@ -53,6 +55,20 @@ def get_min_x_value_with_method_of_bisections(lower_value=lower_end(), higher_va
         return x_needed
 
     return get_min_x_value_with_method_of_bisections(x_list[lower_index - 1], x_list[lower_index + 1])
+
+
+def get_n_fibonacci_number(n: int):
+    return pow((1 + sqrt(5)) / 2, n + 1) - pow((1 - sqrt(5)) / 2, n + 1) / sqrt(5)
+
+
+def get_min_x_value_with_method_of_fibonacci(lower_value=lower_end(), higher_value=higher_end(), fidelity=fidelity()):
+    k = (higher_value - lower_value) / fidelity
+    j = 0
+    while get_n_fibonacci_number(j) <= k:
+        j += 1
+    b = (higher_value - lower_value) / get_n_fibonacci_number(1)
+    x = {1: lower_value + b * get_n_fibonacci_number(j - 2)}
+
 
 
 def main():
