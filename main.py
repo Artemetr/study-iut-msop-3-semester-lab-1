@@ -1,86 +1,98 @@
-from math import sqrt
-
 import matplotlib.pyplot as plt
 import numpy as np
-from pandas import DataFrame
+import pandas as pd
+from matplotlib.ticker import MultipleLocator, AutoMinorLocator
 
-plt.style.use('ggplot')  # Красивые графики
-plt.rcParams['figure.figsize'] = (15, 5)  # Размер картинок
-
-
-def fidelity():
-    return pow(10, -2)
-
-
-def higher_end():
-    return 2
+from fibonachi_method import get_extremum_of_function_by_fibonacci_method
+from method_of_bisection import get_extremum_of_function_by_method_of_bisections
+from scipy_internal_method import \
+    get_extremum_of_function_by_scipy_internal_method
 
 
-def lower_end():
-    return 1
+def get_limits_step_and_scale(values: list) -> (list, float):
+    min_value = min(values)
+    max_value = max(values)
+    step = (max_value - min_value) / 0.5
 
-
-def frequency():
-    return 50
-
-
-def our_function(x):
-    return 2 * pow(x, 2) + 3 * pow(5 - x, 4 / 3)
-
-
-def get_index_of_min_value_by_list(n_list: list) -> int:
-    min_index = 0
-    i = 0
-    for value in n_list:
-        if value < n_list[min_index]:
-            min_index = i
-        i += 1
-
-    return min_index
-
-
-def get_min_x_value_with_method_of_bisections(lower_value=lower_end(), higher_value=higher_end(), fidelity=fidelity()):
-    x_list = np.linspace(lower_value, higher_value, 4)
-    y_list = [our_function(x) for x in x_list]
-    lower_index = get_index_of_min_value_by_list(list(y_list))
-
-    if lower_index == 0 or lower_index == 3:
-        raise ValueError("Invalid range")
-
-    if x_list[lower_index + 1] - x_list[lower_index - 1] < fidelity:
-        if y_list[lower_index - 1] < y_list[lower_index + 1]:
-            x_needed = x_list[lower_index - 1]
-        else:
-            x_needed = x_list[lower_index + 1]
-        return x_needed
-
-    return get_min_x_value_with_method_of_bisections(x_list[lower_index - 1], x_list[lower_index + 1])
-
-
-def get_n_fibonacci_number(n: int):
-    return pow((1 + sqrt(5)) / 2, n + 1) - pow((1 - sqrt(5)) / 2, n + 1) / sqrt(5)
-
-
-def get_min_x_value_with_method_of_fibonacci(lower_value=lower_end(), higher_value=higher_end(), fidelity=fidelity()):
-    k = (higher_value - lower_value) / fidelity
-    j = 0
-    while get_n_fibonacci_number(j) <= k:
-        j += 1
-    b = (higher_value - lower_value) / get_n_fibonacci_number(1)
-    x = {1: lower_value + b * get_n_fibonacci_number(j - 2)}
-
+    return [min_value - step, max_value + step], step
 
 
 def main():
-    x_list = np.linspace(lower_end() - 1, higher_end() + 1, frequency())
-    y_list = [our_function(x) for x in x_list]
-    data = {'x': x_list, 'y': y_list}
-    min_x = get_min_x_value_with_method_of_bisections()
-    min_y = our_function(min_x)
+    a = 1.4
+    b = 2
+    fidelity = pow(10, -2)
 
-    df = DataFrame(data, columns=['x', 'y'])
-    plt.plot(x_list, y_list, 'r', [min_x], [min_y], 'gs')
+    def function(x: float) -> float:
+        return 2 * pow(x, 2) + 3 * pow(5 - x, 4 / 3)
+
+    # extremum points
+    fibonacci_x = get_extremum_of_function_by_fibonacci_method(
+        function, a, b, fidelity)
+    bisection_x = get_extremum_of_function_by_method_of_bisections(
+        function, a, b, fidelity)
+    scipy_x = get_extremum_of_function_by_scipy_internal_method(
+        function, a, b, fidelity)
+
+    # make plot
+    limits_x, step_x = get_limits_step_and_scale([fibonacci_x,
+                                                  bisection_x,
+                                                  scipy_x])
+    limits_y, step_y = get_limits_step_and_scale([function(x) for x
+                                                  in [fibonacci_x,
+                                                      bisection_x,
+                                                      scipy_x]])
+
+    fig = plt.figure(figsize=(6, 4), dpi=300)
+    ax = fig.add_subplot(1, 1, 1)
+
+    ax.set_xlim(limits_x[0], limits_x[1])
+    ax.set_ylim(limits_y[0], limits_y[1])
+
+    ax.xaxis.set_major_locator(MultipleLocator(step_x))
+    ax.yaxis.set_major_locator(MultipleLocator(step_y))
+
+    ax.xaxis.set_minor_locator(AutoMinorLocator(10))
+    ax.yaxis.set_minor_locator(AutoMinorLocator(10))
+
+    ax.grid(which='major', color='#666666', linestyle='--')
+    ax.grid(which='minor', color='#DDDDDD', linestyle=':')
+
+    x = np.arange(a, b, fidelity * pow(10, -2))
+    ax.plot(x, function(x), label="f(x)", color='#000000', linestyle='-')
+
+    # scipy
+    min_x = np.array([scipy_x])
+    ax.plot(min_x, function(min_x), 'ko', label="extremum point by scipy "
+                                                "internal method")
+    # bisection
+    min_x = np.array([bisection_x])
+    ax.plot(min_x, function(min_x), 'kv',
+            label="extremum point by "
+                  "method of "
+                  "bisections")
+
+    # fibonacci
+    min_x = np.array([fibonacci_x])
+    ax.plot(min_x, function(min_x), 'ks',
+            label="extremum point by fibonacci method")
+
+    # Decorate the figure
+    ax.legend(loc='best')
+    ax.set_xlabel('x')
+    ax.set_ylabel('f(x)')
     plt.show()
+
+    dataset = pd.DataFrame({"fibonacci_method": {"x": fibonacci_x,
+                                                 "y": function(
+                                                     fibonacci_x)},
+                            "bisection_method": {"x": bisection_x,
+                                                 "y": function(
+                                                     bisection_x)},
+                            "scipy_method": {"x": scipy_x,
+                                             "y": function(
+                                                 scipy_x)}
+                            })
+    print(dataset)
 
 
 if __name__ == '__main__':
