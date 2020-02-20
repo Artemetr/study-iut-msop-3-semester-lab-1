@@ -11,7 +11,7 @@ def fibonacci(n: int) -> float:
         float: value of n number of Fibonacci sequence.
     """
     return \
-        pow((1 + sqrt(5)) / 2, n + 1) - pow((1 - sqrt(5)) / 2, n + 1) / sqrt(5)
+        (pow((1 + sqrt(5)) / 2, n + 1) - pow((1 - sqrt(5)) / 2, n + 1)) / sqrt(5)
 
 
 def get_iterations_quantity(a: float, b: float, fidelity: float) -> int:
